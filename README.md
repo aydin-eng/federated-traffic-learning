@@ -1,41 +1,36 @@
-# 🚗 Federated Learning - Traffic Vehicle Detection Dataset
+# 🚗 Traffic Vehicle Detection Dataset & Augmentation Pipeline
 ## Bitirme Projesi (Graduation Thesis Project)
 
-Bu depo, Akıllı Ulaşım Sistemleri (ITS) ve Trafik Yönetimi kapsamında **Federe Öğrenme (Federated Learning)** tabanlı araç tespiti modellerinin eğitimi ve değerlendirilmesi için hazırlanmış **YOLO formatındaki araç veri setini (`vehicle_dataset_v3`)** barındırmaktadır.
+Bu çalışma, Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları için optimize edilmiş **YOLO formatındaki araç tespit veri setini (`vehicle_dataset_v3`)** ve veri artırma (Data Augmentation) süreçlerini barındırmaktadır.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![YOLO](https://img.shields.io/badge/Format-YOLO-orange.svg)](https://docs.ultralytics.com/)
+[![YOLO Format](https://img.shields.io/badge/Format-YOLO-orange.svg)](https://docs.ultralytics.com/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 
 ---
 
-## 📌 Veri Seti Hakkında (Dataset Overview)
-Federe öğrenme mimarisinde her bir trafik kamerası, radar veya kavşak sensörü yerel bir istemci (client) olarak kabul edilir. Bu veri seti, şehir trafiğindeki ana araç kategorilerini tespit etmek, kavşak yoğunluğunu analiz etmek ve gizlilik odaklı dağıtık yapay zeka modelleri eğitmek için optimize edilmiştir.
+## 📌 Proje ve Veri Seti Odağı
+Bu aşamadaki temel amaç; trafik kameralarından elde edilen kısıtlı araç verisini farklı hava koşulları, kamera açıları ve trafik yoğunluğu senaryolarına karşı **veri artırma (Data Augmentation)** teknikleriyle zenginleştirmek ve özellikle az temsil edilen araç sınıflarını (otobüs, kamyon, motosiklet) güçlendirmektir.
 
-### 🏷️ Sınıf Bilgileri (Classes & Labels)
-Veri seti 4 temel araç sınıfını içermektedir:
+### 🏷️ Tespit Edilen Araç Sınıfları (Classes)
 
 | Sınıf ID | Sınıf Adı | Açıklama |
 |---|---|---|
 | **0** | `car` | Otomobil / Binek Araç |
 | **1** | `motorcycle` | Motosiklet / Scooter |
-| **2** | `bus` | Otobüs / Toplu Taşıma Araçları |
-| **3** | `truck` | Kamyon / Ağır Vasıta / Tır |
+| **2** | `bus` | Toplu Taşıma / Otobüs |
+| **3** | `truck` | Kamyon / Ağır Vasıta |
 
 ---
 
-## 📊 Veri Dağılımı ve Bölütleme (Dataset Split)
+## 📊 Mevcut Veri Dağılımı (Mevcut Durum)
 
-Veri seti, nadir sınıfların (özellikle otobüs, kamyon ve motosiklet) homojen dağılması ve modelin genelleme başarısını artırmak amacıyla dengelenerek 3 alt kümeye ayrılmıştır:
-
-| Alt Küme | Görsel Sayısı | Oran | Amaç |
+| Alt Küme | Görsel Sayısı | Oran | Açıklama |
 |---|---|---|---|
-| **Train** | 88 Görsel | ~%70 | Yerel modellerin eğitimi (Local Client Training) |
-| **Validation** | 19 Görsel | ~%15 | Hiperparametre optimizasyonu ve doğrulama |
-| **Test** | 19 Görsel | ~%15 | Global modelin nihai performans ölçümü (Test Evaluation) |
-| **TOPLAM** | **126 Görsel** | **%100** | Tam Veri Seti |
-
-> **Not:** Veri seti içerisinde YOLO mimarisinin yanlış pozitif (false positive) tespitlerini önlemek amacıyla standart arka plan (background) görselleri de dengeli şekilde yer almaktadır.
+| **Train** | 88 Görsel | ~%70 | Veri artırma (Augmentation) uygulanacak ana eğitim kümesi |
+| **Validation** | 19 Görsel | ~%15 | Doğrulama kümesi (Orijinal hali korunur) |
+| **Test** | 19 Görsel | ~%15 | Test ve nihai değerlendirme kümesi (Orijinal hali korunur) |
+| **TOPLAM** | **126 Görsel** | **%100** | Temel Veri Seti |
 
 ---
 
@@ -44,56 +39,39 @@ Veri seti, nadir sınıfların (özellikle otobüs, kamyon ve motosiklet) homoje
 ```text
 federated-traffic-learning/
 ├── vehicle_dataset_v3/
-│   ├── data.yaml              # YOLO veri yolu ve sınıf tanımlamaları
+│   ├── data.yaml              # Veri yolu ve sınıf tanımlamaları
 │   ├── images/                # Görseller (.jpg / .png)
-│   │   ├── train/             # 88 eğitim görseli
-│   │   ├── val/               # 19 doğrulama görseli
-│   │   └── test/              # 19 test görseli
-│   └── labels/                # YOLO etiket dosyaları (.txt)
-│       ├── train/             # 88 etiket dosyası
-│       ├── val/               # 19 etiket dosyası
-│       └── test/              # 19 etiket dosyası
-├── requirements.txt           # Gerekli temel Python kütüphaneleri
+│   │   ├── train/             # Eğitim görselleri
+│   │   ├── val/               # Doğrulama görselleri
+│   │   └── test/              # Test görselleri
+│   └── labels/                # Normalize edilmiş YOLO etiketleri (.txt)
+│       ├── train/             # Eğitim etiketleri
+│       ├── val/               # Doğrulama etiketleri
+│       └── test/              # Test etiketleri
+├── requirements.txt           # Gerekli kütüphaneler
 ├── .gitignore                 # Takip dışı dosya kuralları
-└── README.md                  # Veri seti detay ve dokümantasyon dosyası
+└── README.md                  # Veri seti ve artırma dokümantasyonu
 ```
 
 ---
 
-## 📝 Etiket Formatı (YOLO Annotation Format)
-Her görüntüye karşılık gelen `.txt` etiket dosyasında her bir araç nesnesi için normalize edilmiş format kullanılır:
+## 📝 Etiket Formatı (YOLO Bounding Box Format)
+Görsellerin `.txt` etiket dosyalarında her satırda bir araç tespit kutusu yer alır:
 ```text
 <class_id> <x_center> <y_center> <width> <height>
 ```
-* Değerler `0.0` ile `1.0` aralığında normalize edilmiştir.
+* Bounding Box koordinatları `[0.0, 1.0]` aralığına normalize edilmiştir.
 
 ---
 
-## 🚀 Hızlı Başlangıç (Quick Start)
-
-### 1. Bağımlılıkları Yükleme
-```bash
-pip install -r requirements.txt
-```
-
-### 2. YOLO ile Eğitimi Başlatma Örneği
-```python
-from ultralytics import YOLO
-
-# Modeli yükle (Örn: YOLOv11)
-model = YOLO('yolo11n.pt')
-
-# vehicle_dataset_v3 ile eğitimi başlat
-results = model.train(
-    data='vehicle_dataset_v3/data.yaml',
-    epochs=50,
-    imgsz=640,
-    batch=8
-)
-```
+## 🎯 Planlanan Veri Artırma (Data Augmentation) Stratejisi
+1. **Çevresel / Hava Koşulları:** Parlaklık, kontrast değişimi, sis/bulanıklık ve gece-gündüz simülasyonu.
+2. **Geometrik Dönüşümler:** Yatay çevirme (horizontal flip), hafif açı değişimleri ve ölçeklendirme (farklı kamera açıları ve mesafeleri).
+3. **Kutu Koruma (Bounding Box Synchronization):** Tüm dönüşümlerde YOLO etiket koordinatlarının otomatik olarak yeniden hesaplanması.
+4. **Sınıf Dengeleme:** Az sayıda bulunan otobüs, kamyon ve motosiklet sınıflarına öncelikli ve hedefli artırma yapılması.
 
 ---
 
 ## 👤 Geliştirici & Bilgiler
 * **Öğrenci:** Aydın Gürler ([@aydin-eng](https://github.com/aydin-eng))
-* **Bitirme Projesi Konusu:** Trafik Yönetimi ve Araç Tespiti için Federe Öğrenme (Federated Learning for Traffic & Vehicle Detection)
+* **Bitirme Projesi Konusu:** Trafik İzleme ve Araç Tespiti için Veri Artırma ve Federe Öğrenme
