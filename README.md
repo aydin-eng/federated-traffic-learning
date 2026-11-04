@@ -12,17 +12,22 @@ Bu çalışma; Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları
 
 ## 📸 Model Karşılaştırma Sonuçları (Before vs. After)
 
-Aşağıdaki karşılaştırmalarda; sol tarafta genel nesnelerle önceden eğitilmiş standart **Base YOLO11n (Pretrained)** modeli, sağ tarafta ise bizim **`vehicle_dataset_v3_augmented`** veri kümemiz ile trafik tespiti için özel olarak eğittiğimiz **Fine-Tuned YOLO11n** modelinin test görüntüleri üzerindeki sonuçları yer almaktadır:
+Aşağıdaki karşılaştırmalarda; sol tarafta standart genel nesnelerle önceden eğitilmiş **Base YOLO11n (Pretrained)** modeli, sağ tarafta ise bizim **`vehicle_dataset_v3_augmented`** veri kümemiz ile trafik tespiti için özel olarak eğittiğimiz **Fine-Tuned YOLO11n** modelinin test görüntüleri üzerindeki çıkarım sonuçları yer almaktadır:
 
-### 1. Motosiklet ve Trafik Tespiti (Motorcycle Detection)
-> *Standart model yoldaki yayaları ve alakasız nesneleri de işlerken, fine-tuned modelimiz doğrudan trafik nesnesi olan motosiklete odaklanmaktadır.*
+### 🌟 1. Özel Trafik Test Fotoğrafı (Custom Traffic Photo Test)
+> *Gerçek trafik fotoğrafı üzerinde önceden eğitilmiş genel model ile veri setimizle eğitilen modelin karşılaştırmalı analizi:*
+
+![Custom Traffic Test Comparison](comparison_results/custom_test_comparison.jpg)
+
+### 2. Motosiklet ve Trafik Tespiti (Motorcycle Detection)
+> *Standart model yoldaki yayaları ve alakasız nesneleri de etiketlerken, fine-tuned modelimiz doğrudan hedef trafik nesnesi olan motosiklete odaklanmaktadır.*
 
 ![Motorcycle Comparison](comparison_results/comparison_3_motorcycle.jpg)
 
-### 2. Otobüs ve Otomobil Tespiti (Bus & Car Detection)
+### 3. Otobüs ve Otomobil Tespiti (Bus & Car Detection)
 ![Bus and Car Comparison](comparison_results/comparison_2_bus_car.jpg)
 
-### 3. Otomobil ve Kamyon Tespiti (Car & Truck Detection)
+### 4. Otomobil ve Kamyon Tespiti (Car & Truck Detection)
 ![Car and Truck Comparison](comparison_results/comparison_1_car_truck.jpg)
 
 ---
@@ -69,9 +74,12 @@ federated-traffic-learning/
 ├── weights/
 │   └── best.pt                             # Eğitilen en başarılı YOLO11 model ağırlığı (~5.5 MB)
 ├── comparison_results/                     # Eğitim öncesi vs sonrası karşılaştırma görselleri
+│   ├── custom_test_comparison.jpg          # Özel test fotoğrafı karşılaştırması
 │   ├── comparison_1_car_truck.jpg
 │   ├── comparison_2_bus_car.jpg
 │   └── comparison_3_motorcycle.jpg
+├── test_samples/                           # Harici test örnekleri
+│   └── user_test_photo.jpg
 ├── training_results/                       # Eğitim çıktıları, grafikler ve metrikler
 │   ├── results.png                         # Epoch kayıp ve mAP grafikleri
 │   ├── confusion_matrix_normalized.png     # Normalize edilmiş karışıklık matrisi
@@ -100,7 +108,7 @@ from ultralytics import YOLO
 model = YOLO('weights/best.pt')
 
 # Herhangi bir trafik görselinde veya videoda tahmin yap
-results = model.predict(source='ornek_trafik_goruntusu.jpg', conf=0.25, save=True)
+results = model.predict(source='test_samples/user_test_photo.jpg', conf=0.25, save=True)
 ```
 
 ---
