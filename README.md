@@ -1,91 +1,99 @@
-# 🚗 Federated Learning for Traffic & Vehicle Detection (Trafik ve Araç Tespiti için Federe Öğrenme)
+# 🚗 Federated Learning - Traffic Vehicle Detection Dataset
+## Bitirme Projesi (Graduation Thesis Project)
 
-Bitirme Projesi (Graduation Thesis Project) kapsamında geliştirilen; gizlilik korumalı (privacy-preserving), dağıtık **Federe Öğrenme (Federated Learning)** ve **YOLO Tabanlı Araç Tespiti (Vehicle Detection)** sistemi.
+Bu depo, Akıllı Ulaşım Sistemleri (ITS) ve Trafik Yönetimi kapsamında **Federe Öğrenme (Federated Learning)** tabanlı araç tespiti modellerinin eğitimi ve değerlendirilmesi için hazırlanmış **YOLO formatındaki araç veri setini (`vehicle_dataset_v3`)** barındırmaktadır.
 
-[![GitHub License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![YOLO](https://img.shields.io/badge/Format-YOLO-orange.svg)](https://docs.ultralytics.com/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red.svg)](https://pytorch.org/)
-[![YOLO11](https://img.shields.io/badge/YOLO-v11-orange.svg)](https://github.com/ultralytics/ultralytics)
-[![Flower](https://img.shields.io/badge/Flower-FL-yellow.svg)](https://flower.ai/)
 
 ---
 
-## 📌 Proje Özeti (Project Overview)
-Geleneksel akıllı ulaşım sistemlerinde (ITS), şehir kameralarından ve sensörlerden toplanan yüksek çözünürlüklü video ve araç verileri merkezi sunuculara aktarılmaktadır. Ancak bu durum:
-* **Gizlilik ve Güvenlik:** Araç plakalarının ve sürüş rotalarının tek bir merkezde toplanarak ifşa olma riski,
-* **Ağ Trafiği ve Bant Genişliği:** Terabaytlarca görsel verinin ağ üzerinden sürekli taşınmasının yarattığı tıkanıklık,
-* **Gerçek Zamanlı Gecikme:** Merkezi modellerin tek noktadan arızalanma (single point of failure) riski doğurur.
+## 📌 Veri Seti Hakkında (Dataset Overview)
+Federe öğrenme mimarisinde her bir trafik kamerası, radar veya kavşak sensörü yerel bir istemci (client) olarak kabul edilir. Bu veri seti, şehir trafiğindeki ana araç kategorilerini tespit etmek, kavşak yoğunluğunu analiz etmek ve gizlilik odaklı dağıtık yapay zeka modelleri eğitmek için optimize edilmiştir.
 
-Bu bitirme projesinde, **YOLO (You Only Look Once)** mimarisi ve **Federe Öğrenme (Flower - flwr)** entegre edilerek:
-1. Her kavşak veya trafik kamerası yerel bir **Federe İstemci (Edge Client)** olarak konumlandırılır.
-2. Kamera görüntüleri ve araç verileri **asla cihaz dışına çıkmaz**.
-3. Yalnızca model ağırlık gradyanları merkezi sunucuya gönderilir ve **FedAvg** algoritması ile global araç tespit modeli eğitilir.
+### 🏷️ Sınıf Bilgileri (Classes & Labels)
+Veri seti 4 temel araç sınıfını içermektedir:
 
----
-
-## 📊 Veri Seti Ayrıntıları (Dataset Details)
-
-Projede araç ve trafik tespitine yönelik özenle filtrelenmiş ve dengelenmiş çok sınıflı YOLO veri seti yer almaktadır:
-
-### 🏷️ Tespit Edilen Sınıflar (Classes)
-| ID | Sınıf Adı | Açıklama |
+| Sınıf ID | Sınıf Adı | Açıklama |
 |---|---|---|
-| **0** | car | Binek Otomobiller |
-| **1** | motorcycle | Motosiklet ve Scooterlar |
-| **2** | us | Toplu Taşıma / Otobüsler |
-| **3** | 	ruck | Kamyon ve Ağır Vasıtalar |
-
-### 📁 Veri Seti Dizin Mimarisi
-* **ehicle_dataset_v3/**: En güncel, filtrelenmiş ve etiket kontrolleri tamamlanmış ana veri seti kümesi.
-  * images/train, images/val, images/test: Görüntü dosyaları (.jpg / .png).
-  * labels/train, labels/val, labels/test: Normalize edilmiş YOLO sınırlayıcı kutu (bounding box) etiketleri (<class_id> <x_center> <y_center> <width> <height>).
-  * data.yaml: Veri yolu ve sınıf isimlerini tanımlayan konfigürasyon dosyası.
-* **ehicle_dataset_clean/**: Temizlenmiş referans araç veri kümesi.
-* **ehicle_dataset_balanced/**: Sınıf dengesizliği (class imbalance) giderilmiş eğitim veri kümesi.
-* **coco128/**: Ön test ve transfer learning karşılaştırmaları için kullanılan alt küme.
+| **0** | `car` | Otomobil / Binek Araç |
+| **1** | `motorcycle` | Motosiklet / Scooter |
+| **2** | `bus` | Otobüs / Toplu Taşıma Araçları |
+| **3** | `truck` | Kamyon / Ağır Vasıta / Tır |
 
 ---
 
-## 🛠️ Proje Dosya Yapısı (File Structure)
+## 📊 Veri Dağılımı ve Bölütleme (Dataset Split)
 
-`	ext
+Veri seti, nadir sınıfların (özellikle otobüs, kamyon ve motosiklet) homojen dağılması ve modelin genelleme başarısını artırmak amacıyla dengelenerek 3 alt kümeye ayrılmıştır:
+
+| Alt Küme | Görsel Sayısı | Oran | Amaç |
+|---|---|---|---|
+| **Train** | 88 Görsel | ~%70 | Yerel modellerin eğitimi (Local Client Training) |
+| **Validation** | 19 Görsel | ~%15 | Hiperparametre optimizasyonu ve doğrulama |
+| **Test** | 19 Görsel | ~%15 | Global modelin nihai performans ölçümü (Test Evaluation) |
+| **TOPLAM** | **126 Görsel** | **%100** | Tam Veri Seti |
+
+> **Not:** Veri seti içerisinde YOLO mimarisinin yanlış pozitif (false positive) tespitlerini önlemek amacıyla standart arka plan (background) görselleri de dengeli şekilde yer almaktadır.
+
+---
+
+## 📁 Dizin Yapısı (Directory Structure)
+
+```text
 federated-traffic-learning/
-├── vehicle_dataset_v3/             # Ana araç tespit veri seti (train/val/test)
-├── vehicle_dataset_clean/          # Filtrelenmiş temiz veri seti
-├── vehicle_dataset_balanced/       # Dengelenmiş veri kümesi
-├── coco128/                        # Benchmark alt kümesi
-├── runs/                           # Önceden yapılan eğitim sonuçları ve metrikler
-├── yolo11n.pt                      # YOLOv11 Nano önceden eğitilmiş model ağırlığı
-├── prepare_dataset_v3.py           # Veri seti hazırlama ve bölütleme betiği
-├── check_distribution.py           # Sınıf dağılımını analiz eden script
-├── check_label.py                  # Etiket doğrulama ve görselleştirme betiği
-├── predict.py                      # Model çıkarım (inference) ve test betiği
-├── requirements.txt                # Gerekli bağımlılıklar
-├── .gitignore                      # Git takip dışı dosyalar
-└── README.md                       # Detaylı proje kılavuzu
-`
+├── vehicle_dataset_v3/
+│   ├── data.yaml              # YOLO veri yolu ve sınıf tanımlamaları
+│   ├── images/                # Görseller (.jpg / .png)
+│   │   ├── train/             # 88 eğitim görseli
+│   │   ├── val/               # 19 doğrulama görseli
+│   │   └── test/              # 19 test görseli
+│   └── labels/                # YOLO etiket dosyaları (.txt)
+│       ├── train/             # 88 etiket dosyası
+│       ├── val/               # 19 etiket dosyası
+│       └── test/              # 19 etiket dosyası
+├── requirements.txt           # Gerekli temel Python kütüphaneleri
+├── .gitignore                 # Takip dışı dosya kuralları
+└── README.md                  # Veri seti detay ve dokümantasyon dosyası
+```
 
 ---
 
-## 🚀 Kurulum ve Kullanım (Getting Started)
+## 📝 Etiket Formatı (YOLO Annotation Format)
+Her görüntüye karşılık gelen `.txt` etiket dosyasında her bir araç nesnesi için normalize edilmiş format kullanılır:
+```text
+<class_id> <x_center> <y_center> <width> <height>
+```
+* Değerler `0.0` ile `1.0` aralığında normalize edilmiştir.
 
-### 1. Bağımlılıkları Yükleyin
-`ash
+---
+
+## 🚀 Hızlı Başlangıç (Quick Start)
+
+### 1. Bağımlılıkları Yükleme
+```bash
 pip install -r requirements.txt
-`
+```
 
-### 2. Veri Seti Dağılımını Kontrol Edin
-`ash
-python check_distribution.py
-`
+### 2. YOLO ile Eğitimi Başlatma Örneği
+```python
+from ultralytics import YOLO
 
-### 3. Modeli Test Edin (Inference)
-`ash
-python predict.py
-`
+# Modeli yükle (Örn: YOLOv11)
+model = YOLO('yolo11n.pt')
+
+# vehicle_dataset_v3 ile eğitimi başlat
+results = model.train(
+    data='vehicle_dataset_v3/data.yaml',
+    epochs=50,
+    imgsz=640,
+    batch=8
+)
+```
 
 ---
 
-## 👤 Geliştirici & Yazar
+## 👤 Geliştirici & Bilgiler
 * **Öğrenci:** Aydın Gürler ([@aydin-eng](https://github.com/aydin-eng))
-* **Bitirme Tezi Konusu:** Federe Öğrenme ile Trafik Analizi ve Araç Tespiti
+* **Bitirme Projesi Konusu:** Trafik Yönetimi ve Araç Tespiti için Federe Öğrenme (Federated Learning for Traffic & Vehicle Detection)
