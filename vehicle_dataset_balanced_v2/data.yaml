@@ -1,0 +1,10 @@
+path: vehicle_dataset_balanced_v2
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: car
+  1: motorcycle
+  2: bus
+  3: truck
