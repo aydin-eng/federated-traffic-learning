@@ -1,16 +1,28 @@
-# 🚗 Traffic Vehicle Detection Dataset & Augmentation Pipeline
+# 🚗 Traffic Vehicle Detection & YOLO11 Training Pipeline
 ## Bitirme Projesi (Graduation Thesis Project)
 
-Bu depo, Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları için optimize edilmiş **YOLO formatındaki araç tespit veri setini (`vehicle_dataset_v3`)** ve sınıf dengesizliğini gideren **veri artırma (Data Augmentation) pipeline'ı ile üretilmiş `vehicle_dataset_v3_augmented`** veri kümesini barındırmaktadır.
+Bu depo, Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları için optimize edilmiş **YOLO formatındaki araç tespit veri setini (`vehicle_dataset_v3`)**, sınıf dengesizliğini gideren **veri artırma (Data Augmentation) pipeline'ını (`vehicle_dataset_v3_augmented`)** ve **Google Colab üzerinde GPU ile YOLO11 Nano (`yolo11n`) model eğitimi notebook'unu** barındırmaktadır.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aydin-eng/federated-traffic-learning/blob/main/traffic_vehicle_detection_yolo11.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![YOLO Format](https://img.shields.io/badge/Format-YOLO-orange.svg)](https://docs.ultralytics.com/)
+[![YOLO11](https://img.shields.io/badge/Model-YOLO11n-orange.svg)](https://docs.ultralytics.com/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 
 ---
 
-## 📌 Proje ve Veri Seti Odağı
-Bu aşamadaki temel odak; kısıtlı ve sınıf dengesizliği (class imbalance) barındıran trafik veri setini, gerçekçi trafik ve kamera senaryolarına uygun **veri artırma (Data Augmentation)** teknikleriyle zenginleştirmek, YOLO sınırlayıcı kutularını (bounding boxes) senkronize olarak dönüştürmek ve az temsil edilen sınıfları (`motorcycle`, `bus`, `truck`) güçlendirmektir.
+## ⚡ Google Colab ile 1 Tıkla Eğitim (Quick Start on Colab)
+
+Model eğitimini doğrudan Google Colab GPU'su (T4/V100) üzerinde çalıştırmak için aşağıdaki butona tıklayabilirsiniz:
+
+👉 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aydin-eng/federated-traffic-learning/blob/main/traffic_vehicle_detection_yolo11.ipynb)
+
+Notebook dosyası (`traffic_vehicle_detection_yolo11.ipynb`):
+1. Colab GPU donanımını otomatik kontrol eder.
+2. Bu depoyu klonlayıp `vehicle_dataset_v3_augmented` veri setini hazırlar.
+3. `yolo11n.pt` modelini yükler.
+4. Eğitimi başlatır (`epochs=50`, `imgsz=640`, `batch=16`).
+5. Test kümesi üzerinde değerlendirme yaparak mAP50, Precision, Recall metriklerini ve Confusion Matrix grafiklerini çizer.
+6. Test görselleri üzerinde tahmin (inference) yaparak görselleştirir.
 
 ---
 
@@ -76,21 +88,22 @@ Trafik senaryoları ve YOLO nesne tespiti formatı dikkate alınarak geliştiril
 
 ```text
 federated-traffic-learning/
-├── vehicle_dataset_v3/                    # Orijinal veri seti (126 görsel)
-├── vehicle_dataset_v3_augmented/          # Artırılmış ve dengelenmiş veri seti (298 görsel)
-│   ├── data.yaml                          # YOLO veri yolu ve sınıf tanımlamaları
+├── traffic_vehicle_detection_yolo11.ipynb  # Google Colab YOLO11 eğitim notebook'u
+├── vehicle_dataset_v3/                     # Orijinal veri seti (126 görsel)
+├── vehicle_dataset_v3_augmented/           # Artırılmış ve dengelenmiş veri seti (298 görsel)
+│   ├── data.yaml                           # YOLO veri yolu ve sınıf tanımlamaları
 │   ├── images/
-│   │   ├── train/                         # 260 eğitim görseli
-│   │   ├── val/                           # 19 doğrulama görseli
-│   │   └── test/                          # 19 test görseli
+│   │   ├── train/                          # 260 eğitim görseli
+│   │   ├── val/                            # 19 doğrulama görseli
+│   │   └── test/                           # 19 test görseli
 │   └── labels/
-│       ├── train/                         # 260 YOLO etiket dosyası
-│       ├── val/                           # 19 YOLO etiket dosyası
-│       └── test/                          # 19 YOLO etiket dosyası
-├── augment_dataset.py                     # Kutu korumalı veri artırma betiği
-├── requirements.txt                       # Gerekli bağımlılıklar
-├── .gitignore                             # Git takip kuralları
-└── README.md                              # Detaylı dokümantasyon
+│       ├── train/                          # 260 YOLO etiket dosyası
+│       ├── val/                            # 19 YOLO etiket dosyası
+│       └── test/                           # 19 YOLO etiket dosyası
+├── augment_dataset.py                      # Kutu korumalı veri artırma betiği
+├── requirements.txt                        # Gerekli bağımlılıklar
+├── .gitignore                              # Git takip kuralları
+└── README.md                               # Detaylı dokümantasyon
 ```
 
 ---
