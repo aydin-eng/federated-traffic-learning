@@ -12,10 +12,10 @@ Bu çalışma; Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları
 
 ## 📸 Model Karşılaştırma Sonuçları (Before vs. After)
 
-Aşağıdaki karşılaştırmalarda; sol tarafta standart genel nesnelerle önceden eğitilmiş **Base YOLO11n (Pretrained)** modeli, sağ tarafta ise bizim **`vehicle_dataset_v3_augmented`** veri kümemiz ile trafik tespiti için özel olarak eğittiğimiz **Fine-Tuned YOLO11n** modelinin test görüntüleri üzerindeki çıkarım sonuçları yer almaktadır:
+Aşağıdaki karşılaştırmalarda; sol tarafta standart genel nesnelerle önceden eğitilmiş **Base YOLO11n (Pretrained)** modeli, sağ tarafta ise transfer learning stratejisi (`freeze=10`) ile veri kümemiz üzerinde özelleştirdiğimiz **Fine-Tuned YOLO11n** modelinin çıkarım sonuçları yer almaktadır:
 
-### 🌟 1. Özel Trafik Test Fotoğrafı (Custom Traffic Photo Test)
-> *Gerçek trafik fotoğrafı üzerinde önceden eğitilmiş genel model ile veri setimizle eğitilen modelin karşılaştırmalı analizi:*
+### 🌟 1. Gerçek Trafik Test Fotoğrafı (Custom Traffic Photo Test)
+> *Standart COCO modeli ile bizim 4 sınıflı özel araç dedektörümüzün gerçek yol ortamındaki karşılaştırması:*
 
 ![Custom Traffic Test Comparison](comparison_results/custom_test_comparison.jpg)
 
@@ -34,17 +34,20 @@ Aşağıdaki karşılaştırmalarda; sol tarafta standart genel nesnelerle önce
 
 ## 📈 Model Eğitim Başarısı ve Metrikler (Training Results)
 
-Model, Google Colab GPU ortamında 33 epoch boyunca `vehicle_dataset_v3_augmented` veri kümesiyle eğitilmiştir:
+Model, Google Colab GPU ortamında transfer learning optimizasyonu (`freeze=10`, `lr0=0.001`, `cos_lr=True`) ile `vehicle_dataset_v3_augmented` veri kümesiyle eğitilmiştir. Bu sayede omurga (backbone) katmanlarındaki genel görsel öznitelikler dondurularak korunmuş, katastrofik unutma (catastrophic forgetting) engellenerek kafa (head) katmanları 4 araç sınıfımıza hassas bir şekilde adapte edilmiştir:
 
 | Metrik | Değer | Açıklama |
 |---|---|---|
 | **Kullanılan Model** | `YOLO11n (Nano)` | 2.6M Parametre (~5.5 MB) |
-| **Eğitim Süresi** | 33 Epoch | Early Stopping ile en iyi ağırlık seçildi |
-| **Precision (B)** | **%71.98 (0.7198)** | Modelin tespit ettiği araçların doğruluk oranı |
-| **mAP@50 (B)** | **%24.88 (0.2488)** | Ortalama Kesinlik (IoU 0.50) |
+| **Eğitim Süresi** | 39 Epoch | Early Stopping ile en yüksek mAP@50 noktası seçildi |
+| **Transfer Learning** | `freeze=10` | Backbone donduruldu, lr0=0.001, cos_lr=True |
+| **Precision (B)** | **%99.11 (0.9911)** | Modelin tespit ettiği araçların doğruluk oranı |
+| **Recall (B)** | **%25.00 (0.2500)** | Gerçek araçların yakalanma oranı |
+| **mAP@50 (B)** | **%27.64 (0.2764)** | Ortalama Kesinlik (IoU 0.50) |
+| **mAP@50-95 (B)** | **%13.49 (0.1349)** | Kapsamlı IoU aralığı ortalama başarısı |
 | **Görsel Boyutu** | 640x640 | Standart YOLO çözünürlüğü |
 
-### 📊 Eğitim Kayıp Grafikleri (Loss & Metric Curves)
+### 📊 Eğitim Kayıp ve Başarım Grafikleri (Loss & Metric Curves)
 Eğitim süresince `box_loss`, `cls_loss`, `dfl_loss` kayıplarının düşüşü ve kesinlik eğrileri:
 
 ![Eğitim Kayıp Grafikleri](training_results/results.png)
@@ -53,6 +56,13 @@ Eğitim süresince `box_loss`, `cls_loss`, `dfl_loss` kayıplarının düşüş�
 Modelin araç sınıflarını (`car`, `motorcycle`, `bus`, `truck`) ayırt etme başarısı:
 
 ![Confusion Matrix](training_results/confusion_matrix_normalized.png)
+
+### 📉 Precision-Recall (PR) & F1 Eğrileri
+Tüm sınıflar için tespit kesinliği ve duyarlılık dengesi:
+
+| Precision-Recall Eğrisi | F1-Score Eğrisi |
+|---|---|
+| ![PR Curve](training_results/BoxPR_curve.png) | ![F1 Curve](training_results/BoxF1_curve.png) |
 
 ---
 
