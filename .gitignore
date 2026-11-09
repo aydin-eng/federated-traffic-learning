@@ -10,7 +10,7 @@ env/
 
 # Cache & Logs
 .pytest_cache/
-runs/**/*.log
+runs/
 wandb/
 
 # OS & IDE
@@ -18,3 +18,8 @@ wandb/
 Thumbs.db
 .vscode/
 .idea/
+
+# Large archives and generated local dataset
+*.zip
+DETRAC_annotations/
+ua_detrac_dataset/
