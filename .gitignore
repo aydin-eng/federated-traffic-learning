@@ -20,6 +20,12 @@ Thumbs.db
 .idea/
 
 # Large archives and generated local dataset
-*.zip
-DETRAC_annotations/
+DETRAC-Images.zip
+ua_detrac_yolo.zip
 ua_detrac_dataset/
+DETRAC_annotations/
+yolo11_results*.zip
+*.pt
+
+# Allow XML annotations zip (21 MB)
+!detrac_xml_annotations.zip
