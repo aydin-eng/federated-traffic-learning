@@ -14,19 +14,19 @@ Bu proje; Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları içi
 
 ## 📸 Model Karşılaştırma ve Gerçek Saha Testi (Base vs. v1 vs. v2)
 
-Standart COCO ağırlıklı temel model (**Base YOLO11n**), ilk aşama (**v1 UA-DETRAC YOLO11n**) ve en güncel (**v2 Dengeli Çoklu-Kaynak YOLO11s, 800px**) modelimizin bağımsız gerçek trafik sahnesindeki (`test_samples/user_test_photo.jpg`, `conf=0.25`) karşılaştırması:
+Standart COCO ağırlıklı temel model (**Base YOLO11n**), ilk aşama (**v1 UA-DETRAC YOLO11n**) ve en güncel (**v2 Dengeli Çoklu-Kaynak YOLO11s, 800px**) modelimizin bağımsız gerçek trafik sahnesindeki (`test_samples/user_test_photo.jpg`, `conf=0.40`) karşılaştırması:
 
 ![Base vs v1 vs v2 Model Karşılaştırması](comparison_results/v2_vs_v1_vs_base_comparison.jpg)
 
-| Model | Toplam Tespit | Sınıf Dağılımı | En Yüksek Güven |
-|---|---:|---|---:|
-| **0. Base YOLO11n (COCO)** | 29 araç | `21 car`, `6 bus`, `2 truck` | 0.818 |
-| **1. v1 Baseline (UA-DETRAC YOLO11n, 640px)** | 36 araç | `27 car`, `9 truck`, `0 bus` | 0.904 |
-| **2. v2 Dengeli (UA-DETRAC + VisDrone YOLO11s, 800px)** | **92 araç** | **`77 car`, `10 truck`, `5 bus`** | **0.915** |
+| Model | Toplam Tespit | Sınıf Dağılımı | En Yüksek Güven | Ortalama Güven |
+|---|---:|---|---:|---:|
+| **0. Base YOLO11n (COCO, 640px)** | 18 araç | `15 car`, `3 bus`, `0 truck` | 0.818 | 0.572 |
+| **1. v1 Baseline (UA-DETRAC YOLO11n, 640px)** | 31 araç | `24 car`, `7 truck`, `0 bus` | 0.904 | 0.678 |
+| **2. v2 Dengeli (UA-DETRAC + VisDrone YOLO11s, 800px)** | **63 araç** | **`52 car`, `8 truck`, `3 bus`** | **0.915** | **0.685** |
 
 ### 🔍 Karşılaştırma Analizi (v2 ile Neler Kazanıldı?):
-* **2.55× Daha Fazla Araç Tespiti (`36 → 92`):** `imgsz=800` çözünürlüğü, `YOLO11s` omurgası ve VisDrone2019 yüksek açı verisi sayesinde v1'in tamamen kaçırdığı ufuk çizgisine yakın uzak şeritlerdeki araçlar ve kamyon konvoyu (`truck 0.80`, `truck 0.53`, `truck 0.44`) başarıyla yakalandı.
-* **Sınıf Karışıklığının Giderilmesi (`bus` vs `truck` vs `car`):** v1 modelinin hiç `bus` yakalayamayıp ortadaki yolcu otobüsünü ve öndeki büyük otomobili hatalı `truck` saydığı sahnede; v2 modeli öndeki aracı doğru şekilde `car` (`0.86`) olarak düzeltti ve otobüsleri tekrar `bus` (`5` tespit) olarak ayırt etti.
+* **2× Daha Fazla Yüksek Güvenli Tespit (`31 → 63`):** `conf=0.40` eşiğinde dahi v2 modeli; `imgsz=800` çözünürlüğü, `YOLO11s` omurgası ve VisDrone2019 yüksek açı verisi sayesinde v1'in kaçırdığı arka şeritlerdeki uzak araçları ve kamyon konvoyunu (`truck 0.80`, `truck 0.53`, `truck 0.49`, `truck 0.44`) net biçimde yakaladı.
+* **Sınıf Karışıklığının Giderilmesi (`bus` vs `truck` vs `car`):** v1 modelinin öndeki binek araçları hatalı `truck` (`0.46`) ve ortadaki pembe yolcu otobüsünü hatalı `truck` (`0.65`) etiketlediği sahnede; v2 modeli öndeki araçları doğru şekilde `car` (`0.92`, `0.86`), otobüsleri ise **`bus`** (`0.62`, `0.56`, `0.44`) olarak ayırt etti.
 * **v1 vs v2 Yakın Plan Kıyaslama:** ![v1 vs v2 Karşılaştırması](comparison_results/v2_vs_v1_comparison.jpg)
 
 ---
@@ -135,7 +135,7 @@ federated-traffic-learning/
 ├── comparison_results/                           # Çıkarım karşılaştırma görselleri
 │   ├── v2_vs_v1_vs_base_comparison.jpg           # Base vs v1 vs v2 3'lü saha kıyaslaması (GÜNCEL)
 │   ├── v2_vs_v1_comparison.jpg                   # v1 Baseline vs v2 Dengeli YOLO11s kıyaslaması
-│   ├── pred_v2_balanced_yolo11s.jpg              # v2 Dengeli model tahmin çıktısı (92 araç)
+│   ├── pred_v2_balanced_yolo11s.jpg              # v2 Dengeli model tahmin çıktısı (63 araç, conf=0.40)
 │   ├── detrac_vs_base_comparison.jpg             # v1 vs Pretrained Base kıyaslaması
 │   ├── pred_detrac_yolo11n.jpg                   # v1 model tahmin çıktısı
 │   └── pred_base_yolo11n.jpg                     # Base model tahmin çıktısı
