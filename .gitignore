@@ -25,6 +25,7 @@ ua_detrac_yolo.zip
 ua_detrac_dataset/
 DETRAC_annotations/
 yolo11_results*.zip
+yolo11s_balanced_results*.zip
 *.pt
 
 # Allow XML annotations zip (21 MB)

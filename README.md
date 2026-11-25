@@ -26,40 +26,50 @@ Standart COCO ağırlıklı temel model (**Base YOLO11n**) ile gerçek trafik g�
 
 ## 📈 Model Başarım Metrikleri ve Karşılaştırmalı Tablo
 
-Modelimiz, Google Colab Tesla T4 GPU ortamında 21 epoch boyunca eğitilmiş ve en yüksek mAP skoru 11. epoch'ta elde edilerek `best.pt` olarak kaydedilmiştir:
+En güncel **v2 Dengeli Çoklu-Kaynak** modelimiz (`weights/best_yolo11s_balanced.pt`), Google Colab Tesla T4 GPU ortamında `imgsz=800` çözünürlükle 46 epoch boyunca eğitilmiş (Early Stopping `patience=15`) ve en yüksek fitness skoru **31. epoch**'ta elde edilmiştir:
 
-| Metrik | İlk Aşama (COCO Alt Kümesi) | **Yeni UA-DETRAC Modeli (GÜNCEL)** | Gelişim / İlerleme |
+| Metrik | İlk Aşama (COCO Alt Kümesi) | v1 Baseline (`YOLO11n`, 640px) | **v2 Dengeli Çoklu-Kaynak (`YOLO11s`, 800px — GÜNCEL)** |
 |---|---|---|---|
-| **Eğitim Verisi** | 12 Görsel (Veri artırımlı 298) | **~4.000+ Gerçek Trafik Görseli** | **~14x Veri Hacmi** |
-| **Toplam Etiket Sayısı**| ~1.200 Araç Kutusu | **~40.000+ Gerçek Araç Kutusu** | **~33x Daha Fazla Örnek** |
-| **Precision (Kesinlik)** | %99.1 (Aşırı ezber/Overfit) | **%81.5 (0.8149)** | Dengeli ve gerçekçi genelleme |
-| **Recall (Duyarlılık)** | %25.0 (Çoğu aracı kaçırıyordu) | **%58.3 (0.5828)** | **+33.3 Puan Artış!** |
-| **mAP@50 (Ortalama Başarı)**| %27.6 (0.2764) | **%68.4 (0.6836)** | **+%40.8 Puan Artış (2.5 Kat!)** |
-| **mAP@50-95 (Kapsamlı Başarı)**| %13.5 (0.1349) | **%49.1 (0.4914)** | **+%35.6 Puan Artış (3.6 Kat!)** |
-| **Model Boyutu** | 5.5 MB (YOLO11n) | **5.5 MB (YOLO11n)** | Edge/IoT cihazlara tam uyumlu |
+| **Eğitim Verisi** | 12 Görsel (Artırımlı 298) | ~4.000+ Görsel (UA-DETRAC) | **8.007 Görsel** (4.407 UA-DETRAC + 3.600 VisDrone2019) |
+| **Toplam Etiket Sayısı** | ~1.200 Araç Kutusu | ~40.000+ Araç Kutusu | **161.838 Train Kutusu** (`19.005` Val Kutusu) |
+| **En İyi Epoch** | — | 11 / 21 (`patience=10`) | **31 / 46** (`patience=15`) |
+| **Precision (Kesinlik)** | %99.1 (Overfit) | **%81.5 (0.8149)** | **%77.4 (0.7741)** |
+| **Recall (Duyarlılık)** | %25.0 | %58.3 (0.5828) | **%68.9 (0.6887)** *(+10.6 Puan!)* |
+| **mAP@50 (Genel Ortalama)** | %27.6 (0.2764) | %68.4 (0.6836) | **%73.2 (0.7321)** *(+4.8 Puan — 4 sınıf)* |
+| **mAP@50-95 (Kapsamlı)** | %13.5 (0.1349) | %49.1 (0.4914) | **%51.9 (0.5187)** *(+2.7 Puan!)* |
+| **Model Boyutu** | 5.5 MB (`YOLO11n`) | 5.5 MB (`YOLO11n`) | **18.7 MB (`YOLO11s`)** |
+
+### 🎯 Sınıf Bazlı Başarım Karşılaştırması (Per-Class v1 vs v2)
+
+| Sınıf | v1 Baseline mAP@50 | **v2 Precision** | **v2 Recall** | **v2 mAP@50** | **v2 mAP@50-95** | Gelişim |
+|---|---:|---:|---:|---:|---:|---|
+| **`car`** | 0.863 | 0.8480 | 0.8861 | **0.9120** | 0.6489 | **+4.9 Puan** |
+| **`bus`** | 0.815 | 0.8700 | 0.8580 | **0.8861** | 0.7316 | **+7.1 Puan** |
+| **`truck`** | 0.374 | 0.7612 | 0.5506 | **0.6172** | 0.4646 | **+24.3 Puan!** *(850 Val kutusu)* |
+| **`motorcycle`** | 0.000 *(Yoktu)* | 0.6171 | 0.4602 | **0.5132** | 0.2297 | **Sıfırdan %51.3!** *(2.888 Val kutusu)* |
 
 ---
 
-## 📊 Eğitim Grafikleri ve Metrik Eğrileri
+## 📊 Eğitim Grafikleri ve Metrik Eğrileri (v2 Dengeli YOLO11s)
 
 ### 1. Kayıp ve Metrik Gelişimi (Training & Validation Curves)
-Eğitim süresince `box_loss`, `cls_loss`, `dfl_loss` kayıplarının düzenli düşüşü ve validation mAP değerlerinin yükselişi:
+46 epochluk eğitim boyunca `box_loss`, `cls_loss`, `dfl_loss` kayıplarının düşüşü ve validation mAP eğrileri:
 
-![Eğitim Kayıp Grafikleri](training_results/results.png)
+![v2 Eğitim Kayıp Grafikleri](training_results_v2_balanced/results.png)
 
 ### 2. Karışıklık Matrisi (Confusion Matrix)
-Modelin araç sınıflarını (`car`, `bus`, `truck`) ayrıştırma ve arka plan (background) ayrımı:
+Modelin 4 araç sınıfını (`car`, `motorcycle`, `bus`, `truck`) ayrıştırma performansı:
 
 | Normalize Karışıklık Matrisi | Ham Karışıklık Matrisi |
 |---|---|
-| ![Normalized Confusion Matrix](training_results/confusion_matrix_normalized.png) | ![Confusion Matrix](training_results/confusion_matrix.png) |
+| ![v2 Normalized Confusion Matrix](training_results_v2_balanced/confusion_matrix_normalized.png) | ![v2 Confusion Matrix](training_results_v2_balanced/confusion_matrix.png) |
 
-### 3. Precision-Recall (PR) & F1 Skoru Eğrileri
-Tüm sınıflar genelinde kesinlik-duyarlılık dengesi:
+### 3. Precision-Recall (PR), F1 Eğrileri ve Validation Tahmin Örneği
+Tüm sınıflar genelinde kesinlik-duyarlılık dengesi (mAP@50 = **0.732**):
 
-| Precision-Recall Eğrisi (mAP@50 = 0.684) | F1-Score Eğrisi |
-|---|---|
-| ![PR Curve](training_results/BoxPR_curve.png) | ![F1 Curve](training_results/BoxF1_curve.png) |
+| Precision-Recall Eğrisi | F1-Score Eğrisi | Validation Tahmin Örneği |
+|---|---|---|
+| ![v2 PR Curve](training_results_v2_balanced/BoxPR_curve.png) | ![v2 F1 Curve](training_results_v2_balanced/BoxF1_curve.png) | ![v2 Val Pred](training_results_v2_balanced/val_batch0_pred.jpg) |
 
 ---
 
@@ -112,21 +122,25 @@ federated-traffic-learning/
 │       ├── fuse_external_vehicles.py             # VisDrone2019-DET motorcycle/truck/bus füzyonu
 │       └── augment_minority.py                   # Yalnızca nadir sınıflar (motorcycle, truck) için train augmentation
 ├── weights/
-│   ├── best.pt                                   # UA-DETRAC baseline modeli (~5.5 MB)
-│   └── last.pt                                   # Son epoch ağırlığı
+│   ├── best_yolo11s_balanced.pt                  # v2 Dengeli (UA-DETRAC + VisDrone2019) YOLO11s modeli (~18.7 MB)
+│   ├── best.pt                                   # v1 UA-DETRAC baseline modeli (~5.5 MB)
+│   └── last.pt                                   # v1 Son epoch ağırlığı
 ├── comparison_results/                           # Çıkarım karşılaştırma görselleri
 │   ├── detrac_vs_base_comparison.jpg             # Yeni model vs Pretrained Base kıyaslaması
 │   ├── pred_detrac_yolo11n.jpg                   # Yeni model tahmin çıktısı
 │   └── pred_base_yolo11n.jpg                     # Base model tahmin çıktısı
 ├── test_samples/                                 # Bağımsız test fotoğrafları
 │   └── user_test_photo.jpg                       # Gerçek trafik test fotoğrafı
-├── training_results/                             # 21 Epochluk baseline eğitim çıktıları ve analiz grafikleri
+├── training_results_v2_balanced/                 # v2 Dengeli YOLO11s (46 Epoch) çıktıları ve FL metadata
+│   ├── per_class_metrics.json                    # Sınıf bazlı kesinlik/duyarlılık/mAP kayıtları
+│   ├── dataset_metadata.csv                      # 11.389 karelik sekans & hava koşulu FL metaverisi
 │   ├── results.png                               # Epoch metrik ve kayıp grafikleri
 │   ├── results.csv                               # Sayısal metrik kayıtları
 │   ├── confusion_matrix_normalized.png           # Normalize edilmiş karışıklık matrisi
 │   ├── BoxPR_curve.png                           # Precision-Recall eğrisi
 │   ├── BoxF1_curve.png                           # F1 eğrisi
 │   └── args.yaml                                 # Ultralytics eğitim hiperparametreleri
+├── training_results/                             # v1 21 Epochluk baseline eğitim çıktıları
 ├── traffic_vehicle_detection_yolo11.ipynb        # Baseline UA-DETRAC YOLO11n Colab notebook'u
 ├── traffic_vehicle_detection_balanced_yolo11.ipynb # Dengeli v2 (UA-DETRAC + VisDrone2019) YOLO11s Colab notebook'u
 ├── detrac_xml_annotations.zip                    # 93 video dizisine ait resmi XML etiketleri
@@ -138,16 +152,16 @@ federated-traffic-learning/
 
 ## 🚀 Modeli Yerelde Çalıştırma (Inference)
 
-Eğitilen en güncel `best.pt` ağırlıklarını kendi görsel veya videonuzda test etmek için:
+Eğitilen en güncel **`best_yolo11s_balanced.pt`** ağırlıklarını kendi görsel veya videonuzda test etmek için:
 
 ```python
 from ultralytics import YOLO
 
-# Eğitilmiş modeli yükle
-model = YOLO('weights/best.pt')
+# Eğitilmiş v2 dengeli modeli yükle
+model = YOLO('weights/best_yolo11s_balanced.pt')
 
-# Herhangi bir trafik görselinde çıkarım yap
-results = model.predict(source='test_samples/user_test_photo.jpg', conf=0.25, save=True)
+# Herhangi bir trafik görselinde çıkarım yap (imgsz=800 ile eğitildiği için 800 önerilir)
+results = model.predict(source='test_samples/user_test_photo.jpg', imgsz=800, conf=0.25, save=True)
 
 # Tespit edilen araçları yazdır
 for box in results[0].boxes:
