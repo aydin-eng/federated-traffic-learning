@@ -3,9 +3,10 @@
 
 Bu proje; Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları için **gerçek trafik gözetleme kameralarından elde edilen UA-DETRAC Benchmark Veri Seti** üzerinde optimize edilmiş **YOLO11 Nano** modelini ve ilerleyen aşamalarda **Federal Öğrenme (Federated Learning)** mimarisinde kullanılacak temel yerel model altyapısını içermektedir.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aydin-eng/federated-traffic-learning/blob/main/traffic_vehicle_detection_yolo11.ipynb)
+[![Open In Colab (Baseline YOLO11n)](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aydin-eng/federated-traffic-learning/blob/main/traffic_vehicle_detection_yolo11.ipynb)
+[![Open In Colab (Balanced v2 YOLO11s)](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aydin-eng/federated-traffic-learning/blob/main/traffic_vehicle_detection_balanced_yolo11.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![YOLO11](https://img.shields.io/badge/Model-YOLO11n-orange.svg)](https://docs.ultralytics.com/)
+[![YOLO11](https://img.shields.io/badge/Model-YOLO11n%20%7C%20YOLO11s-orange.svg)](https://docs.ultralytics.com/)
 [![Dataset: UA--DETRAC](https://img.shields.io/badge/Dataset-UA--DETRAC-success.svg)](https://sites.google.com/view/daweidu/projects/ua-detrac)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 
@@ -73,6 +74,25 @@ Tüm sınıflar genelinde kesinlik-duyarlılık dengesi:
 
 ---
 
+## ⚖️ Sınıf Dengesizliği Çözümü ve Çoklu-Kaynak Pipeline (v2 — YOLO11s)
+
+İlk UA-DETRAC eğitiminde `car` sınıfında %86.3 mAP@50 elde edilmesine rağmen nadir sınıflarda veri dağılımı kaynaklı darboğazlar tespit edilmiştir (`car:truck` oranı **135:1**, `truck` mAP@50 **0.374**, UA-DETRAC içinde `motorcycle` etiketinin bulunmaması ve `<ignored_region>` alanlarının maskelenmemesi kaynaklı sahte arka plan cezaları).
+
+Bu sorunları gidermek için modüler çoklu-kaynak eğitim pipeline'ı (`v2`) eklenmiştir:
+
+1. **Akıllı Sınıf-Duyarlı Örnekleme ve `<ignored_region>` Maskeleme (`src/data/prepare_balanced_dataset.py`):**
+   * Uniform `step=20` yerine sınıf yoğunluğuna duyarlı örnekleme (`train_truck_step=2`, `train_bus_step=15`, `train_car_step=120`, `max_car_only=3`) ile UA-DETRAC `car:truck` oranı **135:1 → 12.1:1** seviyesine indirilmiş, doğrulama kümesindeki `truck` kutu sayısı **17 → 337** ve `bus` kutu sayısı **66 → 484** düzeyine çıkarılmıştır.
+   * Video sekansı bazlı katmanlı bölme (*Stratified Video Split*) ile `train` (49 sekans) ve `val` (10 sekans) arasında **0 sekans örtüşmesi** sağlanmıştır.
+   * XML `<ignored_region>` alanları `(114, 114, 114)` nötr gri ile maskelenirken geçerli etiketli araç pikselleri korunur; sonraki Federated Learning aşaması için sekans ve hava durumu (`sunny`, `cloudy`, `night`, `rainy`) bilgileri `dataset_metadata.csv` olarak dışa aktarılır.
+2. **VisDrone2019-DET Çoklu-Kaynak Füzyonu (`src/data/fuse_external_vehicles.py`):**
+   * Yukarıdan trafik kamerası açısındaki **VisDrone2019-DET** veri setinden yalnızca azınlık sınıflar (`motorcycle`, `truck`, `bus`) içeren görseller (`max_train=1800`, `max_val=350`) 4-sınıf şemasına birleştirilir.
+3. **Nadir Sınıf Odaklı Augmentation (`src/data/augment_minority.py`):**
+   * Yalnızca `train` kümesindeki `motorcycle` ve `truck` karelerine trafik kamerasına özel dönüşümler (`hflip`, `night`, `rainfog`, `sunlight`, `hsv`) uygulanır; `car`-only karelere kopya üretilmez ve `val`/`test` kümelerine dokunulmaz.
+4. **Optimize YOLO11s Eğitimi (`traffic_vehicle_detection_balanced_yolo11.ipynb`):**
+   * Küçük motosiklet ve uzak kamyonları yakalamak için `yolo11s.pt`, `imgsz=800`, `epochs=50`, `cos_lr=True`, `lr0=0.005`, `cls=0.8`, `mixup=0.15`, `copy_paste=0.15` ile eğitilir ve sınıf bazlı metrikler `per_class_metrics.json` olarak raporlanır.
+
+---
+
 ## 🌐 Federal Öğrenme (Federated Learning) Entegrasyonuna Doğru
 
 Bu model, bitirme projesinin bir sonraki aşaması olan **Federal Öğrenme** mimarisinde:
@@ -86,26 +106,32 @@ Bu model, bitirme projesinin bir sonraki aşaması olan **Federal Öğrenme** mi
 
 ```text
 federated-traffic-learning/
+├── src/
+│   └── data/
+│       ├── prepare_balanced_dataset.py           # Adaptive UA-DETRAC çıkarımı, ignored_region maskeleme ve FL metadata
+│       ├── fuse_external_vehicles.py             # VisDrone2019-DET motorcycle/truck/bus füzyonu
+│       └── augment_minority.py                   # Yalnızca nadir sınıflar (motorcycle, truck) için train augmentation
 ├── weights/
-│   ├── best.pt                             # UA-DETRAC ile eğitilmiş en başarılı model (~5.5 MB)
-│   └── last.pt                             # Son epoch ağırlığı
-├── comparison_results/                     # Çıkarım karşılaştırma görselleri
-│   ├── detrac_vs_base_comparison.jpg       # Yeni model vs Pretrained Base kıyaslaması
-│   ├── pred_detrac_yolo11n.jpg             # Yeni model tahmin çıktısı
-│   └── pred_base_yolo11n.jpg               # Base model tahmin çıktısı
-├── test_samples/                           # Bağımsız test fotoğrafları
-│   └── user_test_photo.jpg                 # Gerçek trafik test fotoğrafı
-├── training_results/                       # 21 Epochluk eğitim çıktıları ve analiz grafikleri
-│   ├── results.png                         # Epoch metrik ve kayıp grafikleri
-│   ├── results.csv                         # Sayısal metrik kayıtları
-│   ├── confusion_matrix_normalized.png     # Normalize edilmiş karışıklık matrisi
-│   ├── BoxPR_curve.png                     # Precision-Recall eğrisi
-│   ├── BoxF1_curve.png                     # F1 eğrisi
-│   └── args.yaml                           # Ultralytics eğitim hiperparametreleri
-├── traffic_vehicle_detection_yolo11.ipynb  # Google Colab GPU uçtan uca eğitim notebook'u
-├── detrac_xml_annotations.zip              # 93 video dizisine ait resmi XML etiketleri
-├── yolo11_results.zip                      # Colab'dan indirilen paketlenmiş eğitim çıktıları
-└── README.md                               # Kapsamlı proje dokümantasyonu
+│   ├── best.pt                                   # UA-DETRAC baseline modeli (~5.5 MB)
+│   └── last.pt                                   # Son epoch ağırlığı
+├── comparison_results/                           # Çıkarım karşılaştırma görselleri
+│   ├── detrac_vs_base_comparison.jpg             # Yeni model vs Pretrained Base kıyaslaması
+│   ├── pred_detrac_yolo11n.jpg                   # Yeni model tahmin çıktısı
+│   └── pred_base_yolo11n.jpg                     # Base model tahmin çıktısı
+├── test_samples/                                 # Bağımsız test fotoğrafları
+│   └── user_test_photo.jpg                       # Gerçek trafik test fotoğrafı
+├── training_results/                             # 21 Epochluk baseline eğitim çıktıları ve analiz grafikleri
+│   ├── results.png                               # Epoch metrik ve kayıp grafikleri
+│   ├── results.csv                               # Sayısal metrik kayıtları
+│   ├── confusion_matrix_normalized.png           # Normalize edilmiş karışıklık matrisi
+│   ├── BoxPR_curve.png                           # Precision-Recall eğrisi
+│   ├── BoxF1_curve.png                           # F1 eğrisi
+│   └── args.yaml                                 # Ultralytics eğitim hiperparametreleri
+├── traffic_vehicle_detection_yolo11.ipynb        # Baseline UA-DETRAC YOLO11n Colab notebook'u
+├── traffic_vehicle_detection_balanced_yolo11.ipynb # Dengeli v2 (UA-DETRAC + VisDrone2019) YOLO11s Colab notebook'u
+├── detrac_xml_annotations.zip                    # 93 video dizisine ait resmi XML etiketleri
+├── yolo11_results.zip                            # Colab'dan indirilen baseline eğitim çıktıları
+└── README.md                                     # Kapsamlı proje dokümantasyonu
 ```
 
 ---
