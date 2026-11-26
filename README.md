@@ -1,7 +1,7 @@
-# 🚗 Federated Traffic Learning: UA-DETRAC ile YOLO11 Araç Tespiti
-## 🎓 Lisans Bitirme Projesi (Graduation Thesis Project)
+# 🚗 Federated Traffic Learning: YOLO11 Vehicle Detection with UA-DETRAC
+## 🎓 Undergraduate Graduation Thesis Project
 
-Bu proje; Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları için **gerçek trafik gözetleme kameralarından elde edilen UA-DETRAC Benchmark Veri Seti** üzerinde optimize edilmiş **YOLO11 Nano** modelini ve ilerleyen aşamalarda **Federal Öğrenme (Federated Learning)** mimarisinde kullanılacak temel yerel model altyapısını içermektedir.
+This project provides optimized **YOLO11 Nano** and **YOLO11 Small** vehicle detection models trained on real-world traffic surveillance imagery (**UA-DETRAC Benchmark** and **VisDrone2019-DET**) for Intelligent Transportation Systems (ITS), establishing the local edge-node detection backbone for our **Federated Learning** framework.
 
 [![Open In Colab (Baseline YOLO11n)](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aydin-eng/federated-traffic-learning/blob/main/traffic_vehicle_detection_yolo11.ipynb)
 [![Open In Colab (Balanced v2 YOLO11s)](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aydin-eng/federated-traffic-learning/blob/main/traffic_vehicle_detection_balanced_yolo11.ipynb)
@@ -12,170 +12,170 @@ Bu proje; Akıllı Ulaşım Sistemleri (ITS) ve Trafik İzleme senaryoları içi
 
 ---
 
-## 📸 Model Karşılaştırma ve Gerçek Saha Testi (Base vs. v1 vs. v2)
+## 📸 Model Comparison & Real-World Field Test (Base vs. v1 vs. v2)
 
-Standart COCO ağırlıklı temel model (**Base YOLO11n**), ilk aşama (**v1 UA-DETRAC YOLO11n**) ve en güncel (**v2 Dengeli Çoklu-Kaynak YOLO11s, 800px**) modelimizin bağımsız gerçek trafik sahnesindeki (`test_samples/user_test_photo.jpg`, `conf=0.40`) karşılaştırması:
+Side-by-side evaluation of the standard COCO pretrained model (**Base YOLO11n**), our first-stage baseline (**v1 UA-DETRAC YOLO11n**), and our latest balanced multi-source model (**v2 Balanced YOLO11s, 800px**) on an independent real-world traffic scene (`test_samples/user_test_photo.jpg`, `conf=0.40`):
 
-![Base vs v1 vs v2 Model Karşılaştırması](comparison_results/v2_vs_v1_vs_base_comparison.jpg)
+![Base vs v1 vs v2 Model Comparison](comparison_results/v2_vs_v1_vs_base_comparison.jpg)
 
-| Model | Toplam Tespit | Sınıf Dağılımı | En Yüksek Güven | Ortalama Güven |
+| Model | Total Detections | Class Breakdown | Max Confidence | Mean Confidence |
 |---|---:|---|---:|---:|
-| **0. Base YOLO11n (COCO, 640px)** | 18 araç | `15 car`, `3 bus`, `0 truck` | 0.818 | 0.572 |
-| **1. v1 Baseline (UA-DETRAC YOLO11n, 640px)** | 31 araç | `24 car`, `7 truck`, `0 bus` | 0.904 | 0.678 |
-| **2. v2 Dengeli (UA-DETRAC + VisDrone YOLO11s, 800px)** | **63 araç** | **`52 car`, `8 truck`, `3 bus`** | **0.915** | **0.685** |
+| **0. Base YOLO11n (COCO, 640px)** | 18 vehicles | `15 car`, `3 bus`, `0 truck` | 0.818 | 0.572 |
+| **1. v1 Baseline (UA-DETRAC YOLO11n, 640px)** | 31 vehicles | `24 car`, `7 truck`, `0 bus` | 0.904 | 0.678 |
+| **2. v2 Balanced (UA-DETRAC + VisDrone YOLO11s, 800px)** | **63 vehicles** | **`52 car`, `8 truck`, `3 bus`** | **0.915** | **0.685** |
 
-### 🔍 Karşılaştırma Analizi (v2 ile Neler Kazanıldı?):
-* **2× Daha Fazla Yüksek Güvenli Tespit (`31 → 63`):** `conf=0.40` eşiğinde dahi v2 modeli; `imgsz=800` çözünürlüğü, `YOLO11s` omurgası ve VisDrone2019 yüksek açı verisi sayesinde v1'in kaçırdığı arka şeritlerdeki uzak araçları ve kamyon konvoyunu (`truck 0.80`, `truck 0.53`, `truck 0.49`, `truck 0.44`) net biçimde yakaladı.
-* **Sınıf Karışıklığının Giderilmesi (`bus` vs `truck` vs `car`):** v1 modelinin öndeki binek araçları hatalı `truck` (`0.46`) ve ortadaki pembe yolcu otobüsünü hatalı `truck` (`0.65`) etiketlediği sahnede; v2 modeli öndeki araçları doğru şekilde `car` (`0.92`, `0.86`), otobüsleri ise **`bus`** (`0.62`, `0.56`, `0.44`) olarak ayırt etti.
-* **v1 vs v2 Yakın Plan Kıyaslama:** ![v1 vs v2 Karşılaştırması](comparison_results/v2_vs_v1_comparison.jpg)
+### 🔍 Comparative Analysis (Key Gains in v2)
+* **2× More High-Confidence Detections (`31 → 63`):** Even at `conf=0.40`, the v2 model—powered by `imgsz=800`, the `YOLO11s` backbone, and elevated-angle VisDrone2019 data—reliably detects distant vehicles and the rear-lane truck convoy (`truck 0.80`, `truck 0.53`, `truck 0.49`, `truck 0.44`) that v1 missed completely.
+* **Resolved Class Confusion (`bus` vs. `truck` vs. `car`):** Whereas v1 misclassified foreground passenger vehicles as `truck` (`0.46`) and the central passenger bus as `truck` (`0.65`) with zero bus detections, v2 accurately identifies the foreground vehicles as `car` (`0.92`, `0.86`) and recovers the buses as **`bus`** (`0.62`, `0.56`, `0.44`).
+* **Close-Up v1 vs. v2 Comparison:** ![v1 vs v2 Comparison](comparison_results/v2_vs_v1_comparison.jpg)
 
 ---
 
-## 📈 Model Başarım Metrikleri ve Karşılaştırmalı Tablo
+## 📈 Performance Metrics & Progression Table
 
-En güncel **v2 Dengeli Çoklu-Kaynak** modelimiz (`weights/best_yolo11s_balanced.pt`), Google Colab Tesla T4 GPU ortamında `imgsz=800` çözünürlükle 46 epoch boyunca eğitilmiş (Early Stopping `patience=15`) ve en yüksek fitness skoru **31. epoch**'ta elde edilmiştir:
+Our latest **v2 Balanced Multi-Source** model (`weights/best_yolo11s_balanced.pt`) was trained on a Google Colab Tesla T4 GPU at `imgsz=800` for 46 epochs (Early Stopping `patience=15`), achieving its highest validation fitness at **Epoch 31**:
 
-| Metrik | İlk Aşama (COCO Alt Kümesi) | v1 Baseline (`YOLO11n`, 640px) | **v2 Dengeli Çoklu-Kaynak (`YOLO11s`, 800px — GÜNCEL)** |
+| Metric | Initial Stage (COCO Subset) | v1 Baseline (`YOLO11n`, 640px) | **v2 Balanced Multi-Source (`YOLO11s`, 800px — LATEST)** |
 |---|---|---|---|
-| **Eğitim Verisi** | 12 Görsel (Artırımlı 298) | ~4.000+ Görsel (UA-DETRAC) | **8.007 Görsel** (4.407 UA-DETRAC + 3.600 VisDrone2019) |
-| **Toplam Etiket Sayısı** | ~1.200 Araç Kutusu | ~40.000+ Araç Kutusu | **161.838 Train Kutusu** (`19.005` Val Kutusu) |
-| **En İyi Epoch** | — | 11 / 21 (`patience=10`) | **31 / 46** (`patience=15`) |
-| **Precision (Kesinlik)** | %99.1 (Overfit) | **%81.5 (0.8149)** | **%77.4 (0.7741)** |
-| **Recall (Duyarlılık)** | %25.0 | %58.3 (0.5828) | **%68.9 (0.6887)** *(+10.6 Puan!)* |
-| **mAP@50 (Genel Ortalama)** | %27.6 (0.2764) | %68.4 (0.6836) | **%73.2 (0.7321)** *(+4.8 Puan — 4 sınıf)* |
-| **mAP@50-95 (Kapsamlı)** | %13.5 (0.1349) | %49.1 (0.4914) | **%51.9 (0.5187)** *(+2.7 Puan!)* |
-| **Model Boyutu** | 5.5 MB (`YOLO11n`) | 5.5 MB (`YOLO11n`) | **18.7 MB (`YOLO11s`)** |
+| **Training Data** | 12 Images (298 Augmented) | ~4,000+ Images (UA-DETRAC) | **8,007 Images** (4,407 UA-DETRAC + 3,600 VisDrone2019) |
+| **Total Annotations** | ~1,200 Vehicle Boxes | ~40,000+ Vehicle Boxes | **161,838 Train Boxes** (`19,005` Val Boxes) |
+| **Best Epoch** | — | 11 / 21 (`patience=10`) | **31 / 46** (`patience=15`) |
+| **Precision** | 99.1% (Overfit) | **81.5% (0.8149)** | **77.4% (0.7741)** |
+| **Recall** | 25.0% | 58.3% (0.5828) | **68.9% (0.6887)** *(+10.6 pts)* |
+| **mAP@50 (Overall)** | 27.6% (0.2764) | 68.4% (0.6836) | **73.2% (0.7321)** *(+4.8 pts across all 4 classes)* |
+| **mAP@50-95** | 13.5% (0.1349) | 49.1% (0.4914) | **51.9% (0.5187)** *(+2.7 pts)* |
+| **Model Size** | 5.5 MB (`YOLO11n`) | 5.5 MB (`YOLO11n`) | **18.7 MB (`YOLO11s`)** |
 
-### 🎯 Sınıf Bazlı Başarım Karşılaştırması (Per-Class v1 vs v2)
+### 🎯 Per-Class Performance Comparison (v1 vs. v2)
 
-| Sınıf | v1 Baseline mAP@50 | **v2 Precision** | **v2 Recall** | **v2 mAP@50** | **v2 mAP@50-95** | Gelişim |
+| Class | v1 Baseline mAP@50 | **v2 Precision** | **v2 Recall** | **v2 mAP@50** | **v2 mAP@50-95** | Improvement |
 |---|---:|---:|---:|---:|---:|---|
-| **`car`** | 0.863 | 0.8480 | 0.8861 | **0.9120** | 0.6489 | **+4.9 Puan** |
-| **`bus`** | 0.815 | 0.8700 | 0.8580 | **0.8861** | 0.7316 | **+7.1 Puan** |
-| **`truck`** | 0.374 | 0.7612 | 0.5506 | **0.6172** | 0.4646 | **+24.3 Puan!** *(850 Val kutusu)* |
-| **`motorcycle`** | 0.000 *(Yoktu)* | 0.6171 | 0.4602 | **0.5132** | 0.2297 | **Sıfırdan %51.3!** *(2.888 Val kutusu)* |
+| **`car`** | 0.863 | 0.8480 | 0.8861 | **0.9120** | 0.6489 | **+4.9 pts** |
+| **`bus`** | 0.815 | 0.8700 | 0.8580 | **0.8861** | 0.7316 | **+7.1 pts** |
+| **`truck`** | 0.374 | 0.7612 | 0.5506 | **0.6172** | 0.4646 | **+24.3 pts** *(850 Val boxes)* |
+| **`motorcycle`** | 0.000 *(Absent)* | 0.6171 | 0.4602 | **0.5132** | 0.2297 | **0 → 51.3%** *(2,888 Val boxes)* |
 
 ---
 
-## 📊 Eğitim Grafikleri ve Metrik Eğrileri (v2 Dengeli YOLO11s)
+## 📊 Training Curves & Evaluation Plots (v2 Balanced YOLO11s)
 
-### 1. Kayıp ve Metrik Gelişimi (Training & Validation Curves)
-46 epochluk eğitim boyunca `box_loss`, `cls_loss`, `dfl_loss` kayıplarının düşüşü ve validation mAP eğrileri:
+### 1. Loss & Metric Progression (Training & Validation Curves)
+Progression of `box_loss`, `cls_loss`, `dfl_loss`, and validation mAP metrics across 46 epochs:
 
-![v2 Eğitim Kayıp Grafikleri](training_results_v2_balanced/results.png)
+![v2 Training and Validation Curves](training_results_v2_balanced/results.png)
 
-### 2. Karışıklık Matrisi (Confusion Matrix)
-Modelin 4 araç sınıfını (`car`, `motorcycle`, `bus`, `truck`) ayrıştırma performansı:
+### 2. Confusion Matrix
+Class discrimination performance across all 4 vehicle categories (`car`, `motorcycle`, `bus`, `truck`):
 
-| Normalize Karışıklık Matrisi | Ham Karışıklık Matrisi |
+| Normalized Confusion Matrix | Raw Confusion Matrix |
 |---|---|
 | ![v2 Normalized Confusion Matrix](training_results_v2_balanced/confusion_matrix_normalized.png) | ![v2 Confusion Matrix](training_results_v2_balanced/confusion_matrix.png) |
 
-### 3. Precision-Recall (PR), F1 Eğrileri ve Validation Tahmin Örneği
-Tüm sınıflar genelinde kesinlik-duyarlılık dengesi (mAP@50 = **0.732**):
+### 3. Precision-Recall (PR), F1 Curves & Validation Predictions
+Precision-recall trade-off across all classes (mAP@50 = **0.732**):
 
-| Precision-Recall Eğrisi | F1-Score Eğrisi | Validation Tahmin Örneği |
+| Precision-Recall Curve | F1-Score Curve | Validation Prediction Sample |
 |---|---|---|
 | ![v2 PR Curve](training_results_v2_balanced/BoxPR_curve.png) | ![v2 F1 Curve](training_results_v2_balanced/BoxF1_curve.png) | ![v2 Val Pred](training_results_v2_balanced/val_batch0_pred.jpg) |
 
 ---
 
-## 🏷️ Tespit Edilen Araç Sınıfları (Classes)
+## 🏷️ Vehicle Classes
 
-| Sınıf ID | Sınıf Adı | Açıklama |
+| Class ID | Class Name | Description |
 |---|---|---|
-| **0** | `car` | Otomobil, Sedan, Hatchback, SUV, Minibüs |
-| **1** | `motorcycle` | Motosiklet, Scooter |
-| **2** | `bus` | Toplu Taşıma, Belediye Otobüsü, Servis |
-| **3** | `truck` | Kamyon, TIR, Ağır Vasıta, Kamyonet |
+| **0** | `car` | Sedan, Hatchback, SUV, Minivan, Passenger Car |
+| **1** | `motorcycle` | Motorcycle, Scooter |
+| **2** | `bus` | Public Transit Bus, Coach, Shuttle Bus |
+| **3** | `truck` | Truck, Heavy Commercial Vehicle, Pickup/Box Truck |
 
 ---
 
-## ⚖️ Sınıf Dengesizliği Çözümü ve Çoklu-Kaynak Pipeline (v2 — YOLO11s)
+## ⚖️ Class-Imbalance Mitigation & Multi-Source Pipeline (v2 — YOLO11s)
 
-İlk UA-DETRAC eğitiminde `car` sınıfında %86.3 mAP@50 elde edilmesine rağmen nadir sınıflarda veri dağılımı kaynaklı darboğazlar tespit edilmiştir (`car:truck` oranı **135:1**, `truck` mAP@50 **0.374**, UA-DETRAC içinde `motorcycle` etiketinin bulunmaması ve `<ignored_region>` alanlarının maskelenmemesi kaynaklı sahte arka plan cezaları).
+Although the v1 UA-DETRAC run achieved 86.3% mAP@50 on `car`, forensic analysis revealed severe distribution bottlenecks: a **135:1** `car:truck` imbalance (`truck` mAP@50 = **0.374**), zero `motorcycle` annotations in UA-DETRAC, and false-positive background penalties caused by unmasked XML `<ignored_region>` boxes.
 
-Bu sorunları gidermek için modüler çoklu-kaynak eğitim pipeline'ı (`v2`) eklenmiştir:
+To address these issues, a modular v2 multi-source pipeline was implemented:
 
-1. **Akıllı Sınıf-Duyarlı Örnekleme ve `<ignored_region>` Maskeleme (`src/data/prepare_balanced_dataset.py`):**
-   * Uniform `step=20` yerine sınıf yoğunluğuna duyarlı örnekleme (`train_truck_step=2`, `train_bus_step=15`, `train_car_step=120`, `max_car_only=3`) ile UA-DETRAC `car:truck` oranı **135:1 → 12.1:1** seviyesine indirilmiş, doğrulama kümesindeki `truck` kutu sayısı **17 → 337** ve `bus` kutu sayısı **66 → 484** düzeyine çıkarılmıştır.
-   * Video sekansı bazlı katmanlı bölme (*Stratified Video Split*) ile `train` (49 sekans) ve `val` (10 sekans) arasında **0 sekans örtüşmesi** sağlanmıştır.
-   * XML `<ignored_region>` alanları `(114, 114, 114)` nötr gri ile maskelenirken geçerli etiketli araç pikselleri korunur; sonraki Federated Learning aşaması için sekans ve hava durumu (`sunny`, `cloudy`, `night`, `rainy`) bilgileri `dataset_metadata.csv` olarak dışa aktarılır.
-2. **VisDrone2019-DET Çoklu-Kaynak Füzyonu (`src/data/fuse_external_vehicles.py`):**
-   * Yukarıdan trafik kamerası açısındaki **VisDrone2019-DET** veri setinden yalnızca azınlık sınıflar (`motorcycle`, `truck`, `bus`) içeren görseller (`max_train=1800`, `max_val=350`) 4-sınıf şemasına birleştirilir.
-3. **Nadir Sınıf Odaklı Augmentation (`src/data/augment_minority.py`):**
-   * Yalnızca `train` kümesindeki `motorcycle` ve `truck` karelerine trafik kamerasına özel dönüşümler (`hflip`, `night`, `rainfog`, `sunlight`, `hsv`) uygulanır; `car`-only karelere kopya üretilmez ve `val`/`test` kümelerine dokunulmaz.
-4. **Optimize YOLO11s Eğitimi (`traffic_vehicle_detection_balanced_yolo11.ipynb`):**
-   * Küçük motosiklet ve uzak kamyonları yakalamak için `yolo11s.pt`, `imgsz=800`, `epochs=50`, `cos_lr=True`, `lr0=0.005`, `cls=0.8`, `mixup=0.15`, `copy_paste=0.15` ile eğitilir ve sınıf bazlı metrikler `per_class_metrics.json` olarak raporlanır.
-
----
-
-## 🌐 Federal Öğrenme (Federated Learning) Entegrasyonuna Doğru
-
-Bu model, bitirme projesinin bir sonraki aşaması olan **Federal Öğrenme** mimarisinde:
-1. **Yerel Model (Local Model):** Farklı kavşak ve trafik kameralarında (Edge node / İstemci) yerel verilerle eğitilecek olan omurga modelini temsil eder.
-2. **Gizlilik Dostu Eğitim:** Kamera ham görüntüleri sunucuya gönderilmeksizin sadece ağırlık gradyanları paylaşılacaktır.
-3. **Küresel Birleştirme (FedAvg / Aggregation):** Eğitilen yerel modeller merkezi sunucuda birleştirilerek her türlü hava koşuluna ve trafik yoğunluğuna dayanıklı genel bir trafik zekası oluşturulacaktır.
+1. **Class-Aware Adaptive Sampling & `<ignored_region>` Masking (`src/data/prepare_balanced_dataset.py`):**
+   * Replaced uniform `step=20` sampling with density-aware strides (`train_truck_step=2`, `train_bus_step=15`, `train_car_step=120`, `max_car_only=3`), reducing the UA-DETRAC `car:truck` ratio from **135:1 → 12.1:1** and increasing validation `truck` boxes from **17 → 337** and `bus` boxes from **66 → 484**.
+   * Enforced a video-level **Stratified Split** (`49` train / `10` val sequences) with **0 sequence overlap** (zero data leakage).
+   * Masked XML `<ignored_region>` boxes with neutral gray `(114, 114, 114)` while preserving valid labeled vehicle pixels, and exported per-frame sequence and weather metadata (`sunny`, `cloudy`, `night`, `rainy`) to `dataset_metadata.csv` for Federated Learning.
+2. **VisDrone2019-DET Multi-Source Fusion (`src/data/fuse_external_vehicles.py`):**
+   * Fused minority-vehicle frames (`motorcycle`, `truck`, `bus`; `max_train=1800`, `max_val=350`) from elevated traffic-camera **VisDrone2019-DET** scenes into the unified 4-class schema.
+3. **Minority-Targeted Augmentation (`src/data/augment_minority.py`):**
+   * Applied traffic-realistic transformations (`hflip`, `night`, `rainfog`, `sunlight`, `hsv`) exclusively to training frames containing `motorcycle` or `truck`, leaving `car`-only, `val`, and `test` splits untouched.
+4. **Optimized YOLO11s Training (`traffic_vehicle_detection_balanced_yolo11.ipynb`):**
+   * Trained `yolo11s.pt` at `imgsz=800` for 50 epochs (`cos_lr=True`, `lr0=0.005`, `cls=0.8`, `mixup=0.15`, `copy_paste=0.15`) with automated per-class evaluation (`per_class_metrics.json`).
 
 ---
 
-## 📁 Proje Dizin Yapısı (Directory Structure)
+## 🌐 Toward Federated Learning Integration
+
+This local detection backbone serves as the foundation for the upcoming **Federated Learning** stage of the thesis:
+1. **Local Edge Model:** Deployed across heterogeneous traffic cameras and intersections (edge clients) trained on private local streams.
+2. **Privacy-Preserving Updates:** Raw surveillance footage never leaves the camera node; only model parameter updates are transmitted.
+3. **Global Aggregation (FedAvg / FedProx):** Local updates are aggregated at the central server to build a generalized traffic detector robust across diverse weather and traffic conditions.
+
+---
+
+## 📁 Directory Structure
 
 ```text
 federated-traffic-learning/
 ├── src/
 │   └── data/
-│       ├── prepare_balanced_dataset.py           # Adaptive UA-DETRAC çıkarımı, ignored_region maskeleme ve FL metadata
-│       ├── fuse_external_vehicles.py             # VisDrone2019-DET motorcycle/truck/bus füzyonu
-│       └── augment_minority.py                   # Yalnızca nadir sınıflar (motorcycle, truck) için train augmentation
+│       ├── prepare_balanced_dataset.py           # Adaptive UA-DETRAC extraction, ignored_region masking & FL metadata
+│       ├── fuse_external_vehicles.py             # VisDrone2019-DET motorcycle/truck/bus fusion
+│       └── augment_minority.py                   # Train-only minority class (motorcycle, truck) augmentation
 ├── weights/
-│   ├── best_yolo11s_balanced.pt                  # v2 Dengeli (UA-DETRAC + VisDrone2019) YOLO11s modeli (~18.7 MB)
-│   ├── best.pt                                   # v1 UA-DETRAC baseline modeli (~5.5 MB)
-│   └── last.pt                                   # v1 Son epoch ağırlığı
-├── comparison_results/                           # Çıkarım karşılaştırma görselleri
-│   ├── v2_vs_v1_vs_base_comparison.jpg           # Base vs v1 vs v2 3'lü saha kıyaslaması (GÜNCEL)
-│   ├── v2_vs_v1_comparison.jpg                   # v1 Baseline vs v2 Dengeli YOLO11s kıyaslaması
-│   ├── pred_v2_balanced_yolo11s.jpg              # v2 Dengeli model tahmin çıktısı (63 araç, conf=0.40)
-│   ├── detrac_vs_base_comparison.jpg             # v1 vs Pretrained Base kıyaslaması
-│   ├── pred_detrac_yolo11n.jpg                   # v1 model tahmin çıktısı
-│   └── pred_base_yolo11n.jpg                     # Base model tahmin çıktısı
-├── test_samples/                                 # Bağımsız test fotoğrafları
-│   └── user_test_photo.jpg                       # Gerçek trafik test fotoğrafı
-├── training_results_v2_balanced/                 # v2 Dengeli YOLO11s (46 Epoch) çıktıları ve FL metadata
-│   ├── per_class_metrics.json                    # Sınıf bazlı kesinlik/duyarlılık/mAP kayıtları
-│   ├── dataset_metadata.csv                      # 11.389 karelik sekans & hava koşulu FL metaverisi
-│   ├── results.png                               # Epoch metrik ve kayıp grafikleri
-│   ├── results.csv                               # Sayısal metrik kayıtları
-│   ├── confusion_matrix_normalized.png           # Normalize edilmiş karışıklık matrisi
-│   ├── BoxPR_curve.png                           # Precision-Recall eğrisi
-│   ├── BoxF1_curve.png                           # F1 eğrisi
-│   └── args.yaml                                 # Ultralytics eğitim hiperparametreleri
-├── training_results/                             # v1 21 Epochluk baseline eğitim çıktıları
-├── traffic_vehicle_detection_yolo11.ipynb        # Baseline UA-DETRAC YOLO11n Colab notebook'u
-├── traffic_vehicle_detection_balanced_yolo11.ipynb # Dengeli v2 (UA-DETRAC + VisDrone2019) YOLO11s Colab notebook'u
-├── detrac_xml_annotations.zip                    # 93 video dizisine ait resmi XML etiketleri
-├── yolo11_results.zip                            # Colab'dan indirilen baseline eğitim çıktıları
-└── README.md                                     # Kapsamlı proje dokümantasyonu
+│   ├── best_yolo11s_balanced.pt                  # v2 Balanced (UA-DETRAC + VisDrone2019) YOLO11s weights (~18.7 MB)
+│   ├── best.pt                                   # v1 UA-DETRAC baseline weights (~5.5 MB)
+│   └── last.pt                                   # v1 Last epoch weights
+├── comparison_results/                           # Inference comparison visuals
+│   ├── v2_vs_v1_vs_base_comparison.jpg           # 3-way field test: Base vs v1 vs v2 (LATEST)
+│   ├── v2_vs_v1_comparison.jpg                   # Close-up comparison: v1 Baseline vs v2 Balanced YOLO11s
+│   ├── pred_v2_balanced_yolo11s.jpg              # v2 Balanced model prediction output (63 vehicles, conf=0.40)
+│   ├── detrac_vs_base_comparison.jpg             # v1 vs Pretrained Base comparison
+│   ├── pred_detrac_yolo11n.jpg                   # v1 model prediction output
+│   └── pred_base_yolo11n.jpg                     # Base model prediction output
+├── test_samples/                                 # Independent test scenes
+│   └── user_test_photo.jpg                       # Real-world traffic test image
+├── training_results_v2_balanced/                 # v2 Balanced YOLO11s (46 Epochs) outputs & FL metadata
+│   ├── per_class_metrics.json                    # Per-class precision, recall, and mAP records
+│   ├── dataset_metadata.csv                      # 11,389-frame sequence & weather metadata for FL
+│   ├── results.png                               # Training/validation loss and metric curves
+│   ├── results.csv                               # Epoch-by-epoch numerical logs
+│   ├── confusion_matrix_normalized.png           # Normalized confusion matrix
+│   ├── BoxPR_curve.png                           # Precision-Recall curve
+│   ├── BoxF1_curve.png                           # F1-score curve
+│   └── args.yaml                                 # Ultralytics training hyperparameters
+├── training_results/                             # v1 21-epoch baseline training outputs
+├── traffic_vehicle_detection_yolo11.ipynb        # Baseline UA-DETRAC YOLO11n Colab notebook
+├── traffic_vehicle_detection_balanced_yolo11.ipynb # Balanced v2 (UA-DETRAC + VisDrone2019) YOLO11s Colab notebook
+├── detrac_xml_annotations.zip                    # Official UA-DETRAC XML annotations (93 video sequences)
+├── yolo11_results.zip                            # Archived baseline training outputs from Colab
+└── README.md                                     # Project documentation
 ```
 
 ---
 
-## 🚀 Modeli Yerelde Çalıştırma (Inference)
+## 🚀 Running Local Inference
 
-Eğitilen en güncel **`best_yolo11s_balanced.pt`** ağırlıklarını kendi görsel veya videonuzda test etmek için:
+To test the latest **`best_yolo11s_balanced.pt`** weights on your own traffic image or video:
 
 ```python
 from ultralytics import YOLO
 
-# Eğitilmiş v2 dengeli modeli yükle
+# Load the trained v2 balanced model
 model = YOLO('weights/best_yolo11s_balanced.pt')
 
-# Herhangi bir trafik görselinde çıkarım yap (imgsz=800 ile eğitildiği için 800 önerilir)
-results = model.predict(source='test_samples/user_test_photo.jpg', imgsz=800, conf=0.25, save=True)
+# Run inference on a traffic image (imgsz=800 matches training resolution)
+results = model.predict(source='test_samples/user_test_photo.jpg', imgsz=800, conf=0.40, save=True)
 
-# Tespit edilen araçları yazdır
+# Print detected vehicles
 for box in results[0].boxes:
     cls_id = int(box.cls[0])
     conf = float(box.conf[0])
-    print(f"Tespit: {model.names[cls_id]} - Güven: {conf:.2f}")
+    print(f"Detected: {model.names[cls_id]} - Confidence: {conf:.2f}")
 ```
